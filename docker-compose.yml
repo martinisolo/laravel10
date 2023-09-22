@@ -1,0 +1,70 @@
+# Version de docker-compose que utilizamos
+version: '3.5'
+
+services:
+  apache7-service:
+    image: laravel10:latest
+
+    container_name: apache-container-laravel10
+
+    volumes:
+      - ./www:/var/www/html
+
+    networks:
+      red_1:
+        ipv4_address: 172.33.0.3
+
+    hostname: servidor_web
+
+        # dependencia del arranque del contenedor de MySql que lo arrancara primero
+    depends_on:
+      - mysql-service
+
+    # En el puerto que lo ponemos
+    ports:
+      - '8008:80'
+
+  # El siguiente contenedor que especificamos es el de MySql
+  mysql-service:
+
+    # Nombre que le damos al contenedor, sale en el campo NAME cuando hacemos un docker ps
+    container_name: mysql-container-laravel10
+
+    # Imagen que utilizamos del repositorio una oficial de MySql, en este caso no utilizamos
+    # ningun Dockerfile
+    image: mysql:8.1
+
+    # En el puerto que lo ponemos
+    ports:
+      - '3306:3306'
+
+    # Password del servidor de MySql user=root password=root
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+
+    # Volumes, son las unidades de nuestro disco que mapeamos al servidor
+    # los datos de la base de datos mysql-data-8 que guardamos en nuestro ordenador para
+    # que cada vez que eliminemos y creemos el contenedor persistan los datos
+    # y temp y directorio temporar para transferir datos entre mi ordenador y el server
+   # si este directorio no existe en tu local, lo crea.
+    volumes:
+      - ./mysql:/var/lib/mysql
+      - ./temp:/mnt
+
+    # le damos una IP fija para tener siempre la misma y asi no tener que cambiar las conexiones
+    # cada vez que se crea el contenedor
+    networks:
+      red_1:
+        ipv4_address: 172.33.0.2
+
+    # Ejecutamos el MySql al arrancar la maquina
+    command: [ 'mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci' ]
+
+# En networks definimos el tipo de red que queremos para nuestros contendores.
+networks:
+  red_1:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.33.0.0/16
+          gateway: 172.33.0.1
